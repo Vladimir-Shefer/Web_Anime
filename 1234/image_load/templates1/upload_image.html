@@ -1,0 +1,82 @@
+{% block content %}
+<input type="file" id="image_to_upload"/>
+<section style = " margin-left: 10px; width:400" >
+    <div class = "row" >
+    <div class = "col"  style = "height:100px;margin-top:25px" >
+    <button class="btn btn-outline-success"  id="btn"  onclick="onclick1()" >Recognize</button>
+    </div>
+    
+    
+</div>
+</section>
+<script type="text/javascript">
+
+function onclick1() {
+    var filepath = document.getElementById("image_to_upload").files[0];
+    alert(filepath);
+   getBase64(filepath);
+    
+   
+
+}
+function getBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      let encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
+      if ((encoded.length % 4) > 0) {
+        encoded += '='.repeat(4 - (encoded.length % 4));
+      }
+      alert(encoded);
+      save(encoded);
+    };
+    reader.onerror = error => reject(error);
+  });
+}
+
+function save(base) {
+   
+    $(document).ready(function(){
+$.ajax({
+   type: "POST",
+   url: "{% url 'imaged' %}",
+   dataType: "json",
+   data: {
+    "image": base,
+    
+    csrfmiddlewaretoken: '{{ csrf_token }}',
+    
+   },
+   success: function(returned, status, xhr) {
+    var result = returned['successff']; // this will be translated into 'true' in JS, not 'True' as string
+    if (result) { 
+    
+        // document.getElementById("number").textContent = result;
+        // document.getElementById("loss").textContent = "-";
+    }
+    else {
+        alert("error")
+    }
+}
+   
+ });
+});
+
+}
+
+
+function getBase641(file) {
+   var reader = new FileReader();
+   reader.readAsDataURL(file);
+   reader.onload = function () {
+    alert(reader.result);
+    save(reader.result);
+   };
+   reader.onerror = function (error) {
+     console.log('Error: ', error);
+   };
+}
+
+</script>
+{% endblock %}

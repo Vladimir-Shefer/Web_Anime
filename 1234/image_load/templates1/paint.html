@@ -1,0 +1,512 @@
+
+{% block content %}
+
+<html>
+  
+	
+    <script type="text/javascript">
+    
+    var canvas, ctx, flag = false,
+        prevX = 0,
+        currX = 0,
+        prevY = 0,
+        currY = 0,
+        dot_flag = false,
+        received_data  = "{{ data|safe }}";
+	
+    var x = "white",
+        y = 30;
+    
+    function init() {
+        canvas = document.getElementById('can');
+        red = document.getElementById('inputGroupSelect');
+        label = document.getElementById('number');
+        ch2 = document.getElementById('ch2');
+        ch3 = document.getElementById('ch3');
+        ch4 = document.getElementById('ch4');
+        chc = document.getElementById('chc');
+        ctx = canvas.getContext("2d");
+        ex = 0;
+        expanded = document.getElementById("expanded");
+        ee = document.getElementById("ee");
+		ctx.color = "black";
+        w = canvas.width;
+        h = canvas.height;
+		ctx.fillStyle = "#000000";
+		ctx.fillRect(0,0,w,h);
+        canvas.addEventListener("mousemove", function (e) {
+            findxy('move', e)
+        }, false);
+        canvas.addEventListener("mousedown", function (e) {
+            findxy('down', e)
+        }, false);
+        canvas.addEventListener("mouseup", function (e) {
+            findxy('up', e)
+        }, false);
+        canvas.addEventListener("mouseout", function (e) {
+            findxy('out', e)
+        }, false);
+       
+    }
+    
+  
+    
+    function draw() {
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.lineCap = "round";
+        ctx.strokeStyle = x;
+        ctx.lineWidth = y;
+        ctx.stroke();
+
+
+
+        // ctx.closePath();
+        // ctx.lineCap = "round";
+        // ctx.beginPath();
+        // ctx.moveTo(prevX, prevY);
+        // ctx.arc(currX, currY, y/0.75,0,2*Math.PI);
+        
+        // ctx.fill();
+        // ctx.stroke();
+
+
+        
+        ctx.closePath();
+    }
+    
+    function erase() {
+         {
+            ctx.clearRect(0, 0, w, h);
+			document.getElementById("canvasimg").style.display = "none";
+			ctx.fillStyle = "#000000";
+			ctx.fillRect(0,0,w,h);
+           
+        }
+    }
+
+    function expand( g) {
+     
+    
+ /*if(ex!=g)
+           {expanded.textContent = g;
+            ex = g;
+            $('.collapse').show();}
+         else 
+         {
+         $('.collapse').hide();
+         ex = 0;
+         }
+        }*/
+    }
+    
+    function save() {
+      
+        var dataURL = canvas.toDataURL();
+		var image = new Image();
+		image.src = canvas.toDataURL("image/jpeg");
+        var n_type = 0;
+		if(ch2.checked)
+        n_type = 2;
+        else if (ch3.checked)
+        n_type = 3;
+        else if (ch4.checked)
+        n_type = 4;
+        else if(chc.checked)
+        n_type = 5;
+		//var m = confirm("Want to clear");
+        $(document).ready(function(){
+    $.ajax({
+       type: "POST",
+       url: "{% url 'imaged' %}",
+       dataType: "json",
+       data: {
+        "image": dataURL,
+        "n_type": n_type,
+		csrfmiddlewaretoken: '{{ csrf_token }}',
+        
+       },
+       success: function(returned, status, xhr) {
+        var result = returned['successff']; // this will be translated into 'true' in JS, not 'True' as string
+        if (result) { 
+        //    var f = JSON.parse(returned);
+        //    var g = f['successff'];
+            
+            document.getElementById("number").textContent = result;
+            document.getElementById("loss").textContent = "-";
+        }
+        else {
+            alert("error")
+        }
+    }
+       
+     });
+});
+	
+}
+
+
+function redact() {
+      
+      var dataURL = canvas.toDataURL();
+      var image = new Image();
+      image.src = canvas.toDataURL("image/jpeg");
+      var n_type = 0;
+      if(ch2.checked)
+      n_type = 2;
+      else if (ch3.checked)
+      n_type = 3;
+      else if (ch4.checked)
+      n_type = 4;
+      else if(chc.checked)
+      n_type = 5;
+      //var m = confirm("Want to clear");
+      $(document).ready(function(){
+  $.ajax({
+     type: "POST",
+     url: "{% url 'imaged' %}",
+     dataType: "json",
+     data: {
+      "image": dataURL,
+      "n_type": n_type,
+      "redact": red.value,
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+      
+     },
+     success: function(returned, status, xhr) {
+      var result = returned['successff']; // this will be translated into 'true' in JS, not 'True' as string
+      if (result) { 
+      //    var f = JSON.parse(returned);
+      //    var g = f['successff'];
+          
+          document.getElementById("number").textContent = result;
+          var losses = returned['loss']; 
+          document.getElementById("loss").textContent = Math.round(losses*100)/100;
+      
+          var ac = returned['accuracy']; 
+          
+      }
+      else {
+        var result = returned['errorMsg'];
+        if (result) { 
+          alert(result);
+        }
+        else alert("ERROR");
+
+      }
+  }
+     
+   });
+});
+  
+}
+    
+    function findxy(res, e) {
+        if (res == 'down') {
+            prevX = currX;
+            prevY = currY;
+
+
+            var totalOffsetX = 0;
+            var totalOffsetY = 0;
+            var canvasX = 0;
+            var canvasY = 0;
+            var currentElement = canvas;
+
+            do{
+        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+                }
+    while(currentElement = currentElement.offsetParent)
+
+    canvasX = event.pageX - totalOffsetX;
+    canvasY = event.pageY - totalOffsetY;
+
+
+
+            currX = canvasX;//e.pageX - canvas.offsetLeft;
+            currY = canvasY;// e.pageY;
+    
+            flag = true;
+            dot_flag = true;
+            if (dot_flag) {
+                ctx.beginPath();
+                ctx.fillStyle = x;
+                ctx.fillRect(currX, currY, 4, 4);
+                ctx.closePath();
+                dot_flag = false;
+                
+            }
+        }
+        if (res == 'up' || res == "out") {
+            flag = false;
+        }
+        if (res == 'move') {
+            if (flag) {
+                prevX = currX;
+                 prevY = currY;
+                // currX = e.pageX - canvas.offsetLeft;
+                // currY = e.pageY;
+                var totalOffsetX = 0;
+            var totalOffsetY = 0;
+            var canvasX = 0;
+            var canvasY = 0;
+            var currentElement = canvas;
+
+            do{
+        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+                }
+    while(currentElement = currentElement.offsetParent)
+
+    canvasX = event.pageX - totalOffsetX;
+    canvasY = event.pageY - totalOffsetY;
+
+
+
+            currX = canvasX;//e.pageX - canvas.offsetLeft;
+            currY = canvasY;// e.pageY;
+    
+                draw();
+                
+            }
+        }
+    }
+
+ 
+
+    </script>
+    
+    <body onload="init()">
+      
+            <div class = "row" width = "100%" style = " margin-top:50px ">
+                <div class = "col-4"  >
+                    <section   style = " margin-left:  10%;">
+                        <section   style = "height: 420px; width: auto; margin-left:  0px;">
+                        <canvas id="can" width="400" height="400" style="border:2px solid;  margin-left: 10px;">
+                            <img id="canvasimg" width="400" height="400"  style="display:none;"/></canvas>
+                      
+                    </section>
+                    <section style = " margin-left: 10px; width:400" >
+                        <div class = "row" >
+                        <div class = "col"  style = "height:100px;margin-top:25px" >
+                        <button class="btn btn-outline-success"  id="btn"  onclick="save()" >Recognize</button>
+                        </div>
+                        <div class = "col"  style = "height:100px; margin-top:25px">
+                        <button class="btn btn-outline-warning"  id="clr"  onclick="erase()" >Clear</button>
+                    </div>
+                   
+                    <div class = "col "  style = "height:100px; margin-top:25px; ">
+                        <div class="input-group"  >
+                            <select class="custom-select" id="inputGroupSelect" aria-label="Example select with button addon">
+                             
+                              <option value = 0>0</option>
+                              <option value=1>1</option>
+                              <option value=2>2</option>
+                              <option value= 3>3</option>
+                              <option value=4>4</option>
+                              <option value=5>5</option>
+                              <option value=6>6</option>
+                              <option value=7>7</option>
+                              <option value= 8>8</option>
+                              <option value=9>9</option>
+                             
+                            </select>
+                            <div class="input-group-append">
+                              <button class="btn btn-outline-danger"  id = "redact_button" onclick="redact()"type="button">Redact</button>
+                            </div>
+                          </div>
+                       </div>
+                        </div>
+                      
+                    </section>
+                 
+                </section>
+                            
+                    </div>
+                   
+                    
+                    <div class = "col-4" >
+                        <section>
+                           
+                          <label class = "form-label" style="margin-left:20%; margin-top: 5%; ">Выберите тип нейронной сети:</label>
+                            <div class = "form-check" style="margin-left:20%; margin-top: 5%;  ">
+                            <input id = "ch2" class = "form-check-input" type = "radio" checked name="Radios" />
+                            <label class ="form-check-label" for = "ch2" >Двухслойная</label>
+                           
+                           
+                            <a  class="badge badge-info"   data-toggle="collapse" href="#multiCollapseExample2" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"   class="bi bi-info-circle" viewbox = "0 0 16 16" >
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+</a>
+<div class="collapse multi-collapse" id="multiCollapseExample2">
+<div class="card card-body"  style="align-items:flex-start; margin-top: 10px"  >
+<p  style="padding: 10px;" > Все перечисленные типы нейросетей имееют вход размерностью 28х28 пикселей, то есть вектор длины 784. Он обрабатывается двумя слоями нейронов: скрытым и выходным.{% load static %} <img src="{% static 'images/2s.png' %}" style = "width: 100%;" /> </p> 
+
+</div>
+</div>
+                            </div>
+                            
+                            <div class ="form-check " style="margin-left:20%; margin-top: 5%; ">
+                                <input id = "ch3" class = "form-check-input" type = "radio" name="Radios"/>
+                                <label class ="form-check-label" for = "ch3" >Трёхслойная</label>
+                                <a  class="badge badge-info"  data-toggle="collapse" href="#multiCollapseExample3" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"   class="bi bi-info-circle" viewbox = "0 0 16 16" >
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+                                      
+                                  </a>
+                                  <div class="collapse multi-collapse" id="multiCollapseExample3">
+                            <div class="card card-body" style="align-items:flex-start; margin-top: 10px">
+                             <p style="padding: 10px;" > Тут примерно то же самое, что и в двухслойной нейросети, только скрытых слоев два.{% load static %} <img src="{% static 'images/3f.png' %}" style = "width: 100%;" /> </p>
+                            </div>
+                          </div>
+                                </div>
+                            <div class = "form-check" style="margin-left:20%; margin-top: 5%; ">
+                                <input id = "ch4" class = "form-check-input" type = "radio" name="Radios"/>
+                                <label class ="form-check-label" for = "ch4" >Четырехслойная</label>
+                                <a  class="badge badge-info" onclick = "expand(4)" data-toggle="collapse" href="#multiCollapseExample4" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"   class="bi bi-info-circle" viewbox = "0 0 16 16" >
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+                                      
+                                  </a>
+                                  <div class="collapse multi-collapse" id="multiCollapseExample4">
+                            <div class="card card-body" style="align-items:flex-start; margin-top: 10px">
+                             <p style="padding: 10px;">А тут скрытых слоев целых три. В сумме с выходным  - 4.{% load static %} <img src="{% static 'images/4s.png' %}" style = "width: 100%;" /> </p>
+                            </div>
+                          </div>
+                                </div>
+                            <div class = "form-check" style="margin-left:20%; margin-top: 5%; ">
+                                    <input id = "chc" class = "form-check-input" type = "radio" name="Radios"/>
+                                    <label class ="form-check-label" for = "chc" >Свёрточная</label>
+                                    <a  class="badge badge-info" onclick = "" data-toggle="collapse" href="#multiCollapseExample5" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"   class="bi bi-info-circle" viewbox = "0 0 16 16" >
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+                                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+                                          
+                                      </a>
+                                      <div class="collapse multi-collapse" id="multiCollapseExample5">
+                            <div class="card card-body" style="align-items:flex-start; margin-top: 10px">
+                             <p style="padding: 10px;" >
+                                Двумерная свертка (2D convolution)— это довольно простая операция: начинаем с ядра, представляющего из себя матрицу весов. Ядро “скользит” над двумерным изображением, поэлементно выполняя операцию умножения с той частью входных данных, над которой оно сейчас находится, и затем суммирует все полученные значения в один выходной пиксель.
+                                {% load static %} <img src="{% static 'images/33.gif' %}" style = "width: 100%;" />
+                                Ядро повторяет эту процедуру с каждой локацией, над которой оно “скользит”, преобразуя двумерную матрицу в другую все еще двумерную матрицу признаков. Признаки на выходе являются взвешенными суммами (где веса являются значениями самого ядра) признаков на входе, расположенных примерно в том же месте, что и выходной пиксель на входном слое. Значениями ядра также могут быть и максимальные значения в локации.
+                                {% load static %} <img src="{% static 'images/f.png' %}" style = "width: 100%;" /> 
+                            </p>
+                            </div>
+                          </div>
+                            </div>
+                        </section>
+                        <section   style = "height: 200px">
+                        <label class = "form-label" style="margin-left:30%; margin-top: 5%; ">Ваше число</label>
+                        
+                        <section   >
+                            
+                            <label class = "form-label" id = "number" style="margin-left:35%; margin-top: 5%; font-size:70px;">-</label>
+                            </section>
+                        </section>
+                        <label class = "form-label" style="margin-left:30%; margin-top: 5%; ">Функция потери <br>при редактирование весов <a  class="badge badge-info"  data-toggle="collapse" href="#losscoll" role="button" aria-expanded="false"   >
+
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"   class="bi bi-info-circle" viewbox = "0 0 16 16" >
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path>
+                              
+                          </a></label>
+                       
+                          <div class="collapse multi-collapse" id="losscoll">
+                <div class="card card-body" style="align-items:flex-start;">
+                 <p style="padding: 10px;" >Потеря: скалярное значение, которое мы пытаемся минимизировать во время обучения модели. Чем ниже потери, тем ближе наши прогнозы к истинным меткам. Желательно, чтобы потери были меньше 0,5. При большем значении - модель нуждается в дополнительном переобучении.
+                </p>
+                </div>
+              </div>
+                        <section   >
+                            
+                            <label class = "form-label" id = "loss" style="margin-left:35%; margin-top: 5%; font-size:70px;">-</label>
+                            
+                            </section>
+                        </section>
+                       
+                         
+                         
+                    </div>
+                    <div class = "col-4" >
+                       
+                        <a  class="badge badge-info"  onclick = "expand(3)"   data-toggle="collapse" href="#info" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+                            Инструкция
+                          </a>
+            <div class="collapse multi-collapse" id="info">
+            <div class="card card-body"  >
+            <p  style="padding: 10px;" >
+                1. Нарисуй на черном квадрате цифру.<br>
+                2. Если нужно стереть цифру, нажми кнопку Clear.<br>
+                2. Выбери тип нейронной сети, которая будет распознавать цифру.<br>
+                3. Нажми Recognize.<br>
+                4. Справа будет написана рапознанная цифра.<br>
+                5. Если нейросеть неправильно распознала число, то рядом с кнопкой Redact выбери нарисованное тобою число и нажми на саму кнопку.<br>
+                6. После предыдущего пункта произойдет переобучение нейронной сети на основе твоего рисунка. Это значит, что изменятся веса нейронов. После этого высветится значение потерь, а также результат распознавания твоего числа на основе новых весов. 
+                <br>
+                Правила:
+                    Разрешается редактировать весы первых двух сетей.
+
+            
+            </div>
+            </div>
+        
+                   
+           
+                <a  class="badge badge-info" onclick = "expand(3)"  data-toggle="collapse" href="#info1" role="button" aria-expanded="false" aria-controls="multiCollapseExample1" >
+                    Теория
+                    </a>
+                 <div class="collapse multi-collapse" id="info1">
+                 <div class="card card-body"  >
+                 <p  style="padding: 10px;" >Нейронная сеть представляет из себя совокупность нейронов, соединенных друг с другом определенным образом. Структура нейронной сети пришла в мир программирования прямиком из биологии.
+                    Рассмотрим один нейрон:
+                 {% load static %} <img src="{% static 'images/neuron.png' %}"  style = "width :100%"/>
+                 Нейрон представляет из себя элемент, который вычисляет выходной сигнал (по определенному правилу) из совокупности входных сигналов. То есть основная последовательность действий одного нейрона такая: 
+    1. Прием сигналов от предыдущих элементов сети 
+    2. Комбинирование входных сигналов 
+    3. Вычисление выходного сигнала 
+    4. Передача выходного сигнала следующим элементам нейронной сети 
+Между собой нейроны могут быть соединены абсолютно по-разному, это определяется структурой конкретной сети. Но суть работы нейронной сети остается всегда одной и той же. По совокупности поступающих на вход сети сигналов на выходе формируется выходной сигнал (или несколько выходных сигналов).
+Рассмотрим математическую модель нейрона нейронной сети:
+От других нейронов или входных сигналов во входа нейрона передаются числовые значения в диапазоне [0,1] или [-1,1], каждое из этих значений умножается на соответствующий вес данного входа. В сумматоре все эти значения складываются и мы получаем число. С помощью функции активации мы вычисляем выходной сигнал. Обычно, чем больше число, тем выше выход функции. Значение выхода идет к следующим нейронам или интерпретируется в ответ.
+{% load static %} <img src="{% static 'images/math.png' %}"  style = "width :100%"/>       
+Алгоритм обучения нейронной сети заключается в использовании выборки, например, картинок, к которым прикреплены верные ответы. Нейросеть обрабатывает каждую картинку, и в зависимости от корректности ответа веса нейронов или увеличиваются или ослабляются, что также зависит от метода обучения нейронов. К тому моменту, когда нейросеть сможет распознать примеры с достаточно малой ошибкой — она будет обучена.          
+{% load static %} <img src="{% static 'images/alg.png' %}"  style = "width :100%"/>
+Рассмотрим наиболее часто используемые функции активации. 
+а) Пороговая функция. Это простая кусочно-линейная функция. Если входное значение меньше порогового, то значение функции активации равно минимальному допустимому, иначе – максимально допустимому. 
+б) Линейный порог. Это несложная кусочно-линейная функция. Имеет два линейных участка, где функция активации тождественно равна минимально допустимому и максимально допустимому значению и есть участок, на котором функция строго монотонно возрастает. 
+в) Сигмоидальная функция или сигмоида (sigmoid).  Сигмоида позволяет усиливать слабые сигналы и не насыщаться от сильных сигналов. 
+г) Гиперболический тангенс (hyperbolic tangent, tanh). Эта функция принимает на входе произвольное вещественное число, а на выходе дает вещественное число в интервале от –1 до 1. Подобно сигмоиде, гиперболический тангенс может насыщаться. Однако, в отличие от сигмоиды, выход данной функции центрирован относительно нуля.
+{% load static %} <img src="{% static 'images/func.png' %}"  style = "width :100%"/>
+Сами нейроны расположены по слоям, а на следующей картинке изображен один из вариантов сети:
+{% load static %} <img src="{% static 'images/web.png' %}"  style = "width :100%"/>
+Тут есть входные нейроны (голубые), получающие данные из, например, картинки, скрытые нейроны (зеленые) обрабатывающие данные от входных, выходные нейроны (красные) — обрабатывают значения от скрытых нейронов в конкретный ответ.
+Как нейросеть будет обучена — ее можно будет использовать и получать в ответ на картинки распознанные образы.
+</p>
+                 </div>
+                 </div>
+                </div> 
+            </div>  
+            <div class="line"></div>
+         
+             
+             
+      
+        
+        
+
+
+
+
+    </body>
+    </html>
+{% endblock %}
+
